@@ -53,6 +53,11 @@ export default function CategoryPage() {
   const handleDelete = async (docId: string, storagePath?: string | null) => {
     if (!isAdmin) return;
 
+    const confirmed = window.confirm(
+      "Är du säker på att du vill radera dokumentet? Detta går inte att ångra."
+    );
+    if (!confirmed) return;
+
     setIsDeletingId(docId);
     try {
       if (storagePath) {
