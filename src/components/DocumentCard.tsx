@@ -3,6 +3,7 @@ import { FileText, FileSpreadsheet, File, ExternalLink, X, Eye, Download } from 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +55,7 @@ const documentTypeColors: Record<string, string> = {
 export function DocumentCard({ document: doc }: DocumentCardProps) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const { toast } = useToast();
   
   const Icon = documentTypeIcons[doc.document_type] ?? File;
   const typeColor = documentTypeColors[doc.document_type] ?? "bg-muted text-muted-foreground";
@@ -79,6 +81,19 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
 
     try {
       setIsDownloading(true);
+      const urlObj = new URL(doc.url, window.location.origin);
+      const isSameOrigin = urlObj.origin === window.location.origin;
+
+      if (!isSameOrigin) {
+        // External servers often block cross-origin fetch for downloads
+        window.open(doc.url, "_blank", "noopener,noreferrer");
+        toast({
+          title: "Öppnar i ny flik",
+          description: "Filen kan inte laddas ner direkt från extern källa.",
+        });
+        return;
+      }
+
       const res = await fetch(doc.url);
       if (!res.ok) {
         throw new Error(`Download failed (${res.status})`);
@@ -95,6 +110,10 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
     } catch {
       // Fallback to opening the file if the download fails
       window.open(doc.url, "_blank", "noopener,noreferrer");
+      toast({
+        title: "Kunde inte ladda ner",
+        description: "Öppnade filen i ny flik istället.",
+      });
     } finally {
       setIsDownloading(false);
     }
