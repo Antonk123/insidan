@@ -6,9 +6,6 @@ import { useCategoryBySlug, useCategories } from "@/hooks/useCategories";
 import { useDocuments } from "@/hooks/useDocuments";
 import { DocumentCard } from "@/components/DocumentCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -32,10 +29,9 @@ export default function CategoryPage() {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [file, setFile] = useState<File | null>(null);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragActive, setIsDragActive] = useState(false);
   
   // Get subcategories
   const subcategories = allCategories?.filter((cat) => cat.parent_id === category?.id);
@@ -55,41 +51,73 @@ export default function CategoryPage() {
 
   const bucketName = "insidan-bucket";
 
+  const addFiles = (incoming: File[]) => {
+    const byName = new Map<string, File>();
+    files.forEach((f) => byName.set(f.name, f));
+    incoming.forEach((f) => byName.set(f.name, f));
+    setFiles(Array.from(byName.values()));
+  };
+
+  const removeFile = (name: string) => {
+    setFiles((prev) => prev.filter((f) => f.name !== name));
+  };
+
   const handleUpload = async () => {
-    if (!user || !file || !category?.id) return;
+    if (!user || files.length === 0 || !category?.id) return;
 
     setIsUploading(true);
     try {
-      const cleanName = file.name.replace(/\s+/g, "-");
-      const path = `${category.slug}/${Date.now()}-${cleanName}`;
+      for (const file of files) {
+        const cleanName = file.name.replace(/\s+/g, "-");
+        const path = `${category.slug}/${cleanName}`;
 
-      const { error: uploadError } = await supabase
-        .storage
-        .from(bucketName)
-        .upload(path, file, { upsert: false });
+        const { error: uploadError } = await supabase
+          .storage
+          .from(bucketName)
+          .upload(path, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
 
-      const documentType = getDocumentType(file.name);
-      const { error: insertError } = await supabase
-        .from("documents")
-        .insert({
-          title: title.trim() || file.name,
-          description: description.trim() || null,
-          category_id: category.id,
-          document_type: documentType,
-          url: path,
-          storage_path: path,
-          is_external: false,
-          is_public: true,
-          is_new: true,
-        });
+        const documentType = getDocumentType(file.name);
+        const { data: existingDoc, error: existingError } = await supabase
+          .from("documents")
+          .select("id")
+          .eq("storage_path", path)
+          .maybeSingle();
 
-      if (insertError) throw insertError;
+        if (existingError) throw existingError;
 
-      setFile(null);
-      setTitle("");
-      setDescription("");
+        if (existingDoc?.id) {
+          const { error: updateError } = await supabase
+            .from("documents")
+            .update({
+              url: path,
+              is_new: true,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existingDoc.id);
+
+          if (updateError) throw updateError;
+        } else {
+          const { error: insertError } = await supabase
+            .from("documents")
+            .insert({
+              title: file.name,
+              description: null,
+              category_id: category.id,
+              document_type: documentType,
+              url: path,
+              storage_path: path,
+              is_external: false,
+              is_public: true,
+              is_new: true,
+            });
+
+          if (insertError) throw insertError;
+        }
+      }
+
+      setFiles([]);
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       queryClient.invalidateQueries({ queryKey: ["recent-documents"] });
 
@@ -240,34 +268,69 @@ export default function CategoryPage() {
                 <CardTitle>Ladda upp dokument</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="upload-title">Titel</Label>
-                  <Input
-                    id="upload-title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Titel (valfritt)"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="upload-description">Beskrivning</Label>
-                  <Textarea
-                    id="upload-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Beskrivning (valfritt)"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="upload-file">Fil</Label>
-                  <Input
-                    id="upload-file"
+                <div
+                  className={`flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 text-center transition-colors ${
+                    isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/30"
+                  }`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragActive(true);
+                  }}
+                  onDragLeave={() => setIsDragActive(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragActive(false);
+                    const dropped = Array.from(e.dataTransfer.files);
+                    if (dropped.length > 0) {
+                      addFiles(dropped);
+                    }
+                  }}
+                >
+                  <p className="text-sm font-medium">Dra & släpp filer här</p>
+                  <p className="text-xs text-muted-foreground">
+                    eller klicka för att välja filer
+                  </p>
+                  <input
+                    className="mt-4 text-xs"
                     type="file"
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                    multiple
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.files ?? []);
+                      if (selected.length > 0) {
+                        addFiles(selected);
+                      }
+                      e.currentTarget.value = "";
+                    }}
                   />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Samma filnamn ersätter befintligt dokument.
+                  </p>
                 </div>
-                <Button onClick={handleUpload} disabled={!file || isUploading}>
-                  {isUploading ? "Laddar upp..." : "Ladda upp"}
+
+                {files.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Valda filer ({files.length})
+                    </p>
+                    <div className="space-y-1">
+                      {files.map((f) => (
+                        <div key={f.name} className="flex items-center justify-between rounded border px-2 py-1 text-xs">
+                          <span className="truncate">{f.name}</span>
+                          <button
+                            type="button"
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={() => removeFile(f.name)}
+                          >
+                            Ta bort
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Button onClick={handleUpload} disabled={files.length === 0 || isUploading}>
+                  {isUploading ? "Laddar upp..." : `Ladda upp ${files.length} fil${files.length === 1 ? "" : "er"}`}
                 </Button>
               </CardContent>
             </Card>
