@@ -1,9 +1,9 @@
 import { useParams, Link } from "react-router-dom";
-import { FileText, FileSpreadsheet, File, ExternalLink, ChevronRight, Home } from "lucide-react";
+import { ChevronRight, Home, Folder, FileText } from "lucide-react";
 import { Header } from "@/components/Header";
 import { useCategoryBySlug, useCategories } from "@/hooks/useCategories";
 import { useDocuments } from "@/hooks/useDocuments";
-import { Badge } from "@/components/ui/badge";
+import { DocumentCard } from "@/components/DocumentCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -15,20 +15,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-const documentTypeIcons: Record<string, React.ElementType> = {
-  pdf: FileText,
-  excel: FileSpreadsheet,
-  word: FileText,
-  link: ExternalLink,
-};
-
-const documentTypeLabels: Record<string, string> = {
-  pdf: "PDF",
-  excel: "Excel",
-  word: "Word",
-  link: "Länk",
-};
-
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: category, isLoading: categoryLoading } = useCategoryBySlug(slug ?? "");
@@ -37,6 +23,11 @@ export default function CategoryPage() {
   
   // Get subcategories
   const subcategories = allCategories?.filter((cat) => cat.parent_id === category?.id);
+  
+  // Get parent category for breadcrumb
+  const parentCategory = category?.parent_id 
+    ? allCategories?.find((cat) => cat.id === category.parent_id)
+    : null;
   
   if (categoryLoading) {
     return (
@@ -74,6 +65,7 @@ export default function CategoryPage() {
       <Header />
       
       <main className="container py-8">
+        {/* Breadcrumb with full path */}
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -86,105 +78,106 @@ export default function CategoryPage() {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/vls">VLS</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            {parentCategory && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link to={`/kategori/${parentCategory.slug}`}>
+                      {parentCategory.name}
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              </>
+            )}
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
               <BreadcrumbPage>{category.name}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
         
         <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">{category.name}</h2>
+          <h1 className="text-3xl font-bold mb-2">{category.name}</h1>
           {category.description && (
             <p className="text-muted-foreground">{category.description}</p>
           )}
         </div>
         
-        {/* Subcategories */}
+        {/* Subcategories as cards */}
         {subcategories && subcategories.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Underkategorier</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 md:grid-cols-2">
-                {subcategories.map((subcat) => (
-                  <Link
-                    key={subcat.id}
-                    to={`/kategori/${subcat.slug}`}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors group"
-                  >
-                    <span className="font-medium group-hover:text-primary transition-colors">
-                      {subcat.name}
-                    </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {/* Documents */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Dokument</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {documentsLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16" />
-                ))}
-              </div>
-            ) : documents && documents.length > 0 ? (
-              <div className="space-y-3">
-                {documents.map((doc) => {
-                  const Icon = documentTypeIcons[doc.document_type] ?? File;
-                  
-                  return (
-                    <a
-                      key={doc.id}
-                      href={doc.url}
-                      target={doc.is_external ? "_blank" : undefined}
-                      rel={doc.is_external ? "noopener noreferrer" : undefined}
-                      className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent transition-colors group"
-                    >
-                      <div className="p-2 bg-muted rounded-lg">
-                        <Icon className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium truncate group-hover:text-primary transition-colors">
-                            {doc.title}
-                          </h4>
-                          {doc.is_new && (
-                            <Badge variant="default" className="text-xs">
-                              Ny
-                            </Badge>
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Folder className="h-5 w-5 text-primary" />
+              Underkategorier
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {subcategories.map((subcat) => (
+                <Link
+                  key={subcat.id}
+                  to={`/kategori/${subcat.slug}`}
+                  className="group"
+                >
+                  <Card className="h-full hover:shadow-md hover:border-primary/30 transition-all">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <Folder className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium group-hover:text-primary transition-colors">
+                            {subcat.name}
+                          </h3>
+                          {subcat.description && (
+                            <p className="text-sm text-muted-foreground truncate">
+                              {subcat.description}
+                            </p>
                           )}
                         </div>
-                        {doc.description && (
-                          <p className="text-sm text-muted-foreground truncate">
-                            {doc.description}
-                          </p>
-                        )}
+                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>
-                      <Badge variant="secondary">
-                        {documentTypeLabels[doc.document_type] ?? doc.document_type}
-                      </Badge>
-                      {doc.is_external && (
-                        <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      )}
-                    </a>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">
-                Inga dokument i denna kategori ännu.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Documents with improved cards */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            Dokument
+          </h2>
+          
+          {documentsLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-32" />
+              ))}
+            </div>
+          ) : documents && documents.length > 0 ? (
+            <div className="space-y-4">
+              {documents.map((doc) => (
+                <DocumentCard key={doc.id} document={doc} />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  Inga dokument i denna kategori ännu.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </main>
     </div>
   );
