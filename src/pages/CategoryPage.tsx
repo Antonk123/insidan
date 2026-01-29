@@ -51,7 +51,6 @@ export default function CategoryPage() {
     if (ext === "doc" || ext === "docx") return "word";
     return "file";
   };
-
   const handleDelete = async (docId: string, storagePath?: string | null) => {
     if (!isAdmin) return;
 
@@ -154,7 +153,6 @@ export default function CategoryPage() {
   const removeFile = (name: string) => {
     setFiles((prev) => prev.filter((f) => f.name !== name));
   };
-
   const handleUpload = async () => {
     if (!user || files.length === 0 || !category?.id) return;
 
@@ -163,7 +161,6 @@ export default function CategoryPage() {
       for (const file of files) {
         const cleanName = file.name.replace(/\s+/g, "-");
         const path = `${category.slug}/${cleanName}`;
-
         const { error: uploadError } = await supabase
           .storage
           .from(bucketName)
