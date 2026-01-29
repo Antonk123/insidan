@@ -243,12 +243,7 @@ export default function VLSPage() {
                 className={`process-card process-card--${item.type}`}
                 data-type={item.type}
               >
-                <a
-                  className="process-card__link"
-                  href={item.href}
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                <a className="process-card__link" href={item.href}>
                   <h3>{item.title}</h3>
                   <p>{item.description}</p>
                 </a>
