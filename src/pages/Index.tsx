@@ -29,7 +29,9 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="mt-10 text-xs text-muted-foreground">Build: {buildMarker}</div>
+        <div className="mt-10 text-xs text-muted-foreground">
+          Build: {buildMarker}
+        </div>
       </main>
     </div>
   );
