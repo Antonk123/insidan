@@ -26,7 +26,7 @@ export default function CategoryPage() {
   const { data: category, isLoading: categoryLoading } = useCategoryBySlug(slug ?? "");
   const { data: allCategories } = useCategories();
   const { data: documents, isLoading: documentsLoading } = useDocuments(category?.id);
-  const { user } = useAuthContext();
+  const { user, isAdmin } = useAuthContext();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [files, setFiles] = useState<File[]>([]);
@@ -262,7 +262,7 @@ export default function CategoryPage() {
             Dokument
           </h2>
 
-          {user && (
+          {isAdmin && (
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle>Ladda upp dokument</CardTitle>
