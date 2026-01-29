@@ -70,11 +70,6 @@ export default function CategoryPage() {
 
       if (uploadError) throw uploadError;
 
-      const { data: publicUrlData } = supabase
-        .storage
-        .from(bucketName)
-        .getPublicUrl(path);
-
       const documentType = getDocumentType(file.name);
       const { error: insertError } = await supabase
         .from("documents")
@@ -83,7 +78,8 @@ export default function CategoryPage() {
           description: description.trim() || null,
           category_id: category.id,
           document_type: documentType,
-          url: publicUrlData.publicUrl,
+          url: path,
+          storage_path: path,
           is_external: false,
           is_public: true,
           is_new: true,

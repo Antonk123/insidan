@@ -68,6 +68,7 @@ export type Database = {
           is_external: boolean | null
           is_new: boolean | null
           is_public: boolean | null
+          storage_path: string | null
           tags: string[] | null
           title: string
           updated_at: string | null
@@ -82,6 +83,7 @@ export type Database = {
           is_external?: boolean | null
           is_new?: boolean | null
           is_public?: boolean | null
+          storage_path?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string | null
@@ -96,6 +98,7 @@ export type Database = {
           is_external?: boolean | null
           is_new?: boolean | null
           is_public?: boolean | null
+          storage_path?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string | null
