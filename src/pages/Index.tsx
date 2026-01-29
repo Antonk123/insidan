@@ -10,6 +10,8 @@ const Index = () => {
   const { user, session, isAdmin, loading } = useAuthContext();
   const isFetching = useIsFetching();
   const debugEnabled = new URLSearchParams(window.location.search).has("debug");
+  const buildMarkerEnabled = new URLSearchParams(window.location.search).has("build");
+  const buildMarker = "2026-01-29-build";
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
   const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
   const sessionExpiresAt = session?.expires_at
@@ -71,6 +73,12 @@ const Index = () => {
             <RecentDocuments />
           </div>
         </div>
+
+        {buildMarkerEnabled && (
+          <div className="mt-6 text-xs text-muted-foreground">
+            Build: {buildMarker}
+          </div>
+        )}
 
         {debugEnabled && (
           <div className="mt-4 rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
