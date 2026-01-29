@@ -33,6 +33,8 @@ export default function CategoryPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
   
   // Get subcategories
   const subcategories = allCategories?.filter((cat) => cat.parent_id === category?.id);
@@ -90,6 +92,53 @@ export default function CategoryPage() {
       });
     } finally {
       setIsDeletingId(null);
+    }
+  };
+
+  const handleStartEdit = (docId: string, currentTitle: string) => {
+    setEditingId(docId);
+    setEditingTitle(currentTitle);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditingTitle("");
+  };
+
+  const handleSaveTitle = async (docId: string) => {
+    if (!isAdmin) return;
+    const nextTitle = editingTitle.trim();
+    if (!nextTitle) {
+      toast({
+        title: "Ogiltigt namn",
+        description: "Visningsnamnet kan inte vara tomt.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("documents")
+        .update({ title: nextTitle, updated_at: new Date().toISOString() })
+        .eq("id", docId);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-documents"] });
+
+      toast({
+        title: "Uppdaterat",
+        description: "Visningsnamnet är uppdaterat.",
+      });
+      handleCancelEdit();
+    } catch (error: any) {
+      toast({
+        title: "Fel vid uppdatering",
+        description: error?.message ?? "Något gick fel. Försök igen.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -392,15 +441,40 @@ export default function CategoryPage() {
                 <div key={doc.id} className="space-y-2">
                   <DocumentCard document={doc} />
                   {isAdmin && (
-                    <div className="flex justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(doc.id, doc.storage_path)}
-                        disabled={isDeletingId === doc.id}
-                      >
-                        {isDeletingId === doc.id ? "Tar bort..." : "Ta bort"}
-                      </Button>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {editingId === doc.id ? (
+                        <>
+                          <input
+                            className="h-8 w-64 rounded border px-2 text-sm"
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                          />
+                          <Button size="sm" onClick={() => handleSaveTitle(doc.id)}>
+                            Spara
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                            Avbryt
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleStartEdit(doc.id, doc.title)}
+                          >
+                            Redigera namn
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(doc.id, doc.storage_path)}
+                            disabled={isDeletingId === doc.id}
+                          >
+                            {isDeletingId === doc.id ? "Tar bort..." : "Ta bort"}
+                          </Button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
