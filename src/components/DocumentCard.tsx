@@ -165,27 +165,27 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
 
       {/* PDF Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-4xl h-[80vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>{doc.title}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setPreviewOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 -mx-6 -mb-6">
-            <iframe
-              src={doc.url}
-              className="w-full h-full rounded-b-lg"
-              title={doc.title}
-            />
-          </div>
-        </DialogContent>
+      <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
+          <DialogTitle className="flex items-center justify-between">
+            <span>{doc.title}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setPreviewOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 px-6 pb-6">
+          <iframe
+            src={doc.url}
+            className="w-full h-full rounded-lg border"
+            title={doc.title}
+          />
+        </div>
+      </DialogContent>
       </Dialog>
     </>
   );
