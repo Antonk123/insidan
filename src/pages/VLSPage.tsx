@@ -24,7 +24,7 @@ const PROCESS_ITEMS: Array<{
   {
     title: "Affärsidé och Policy",
     description: "Grundläggande riktning för verksamheten.",
-    href: "http://insidan.pitea.local/?page_id=226",
+    href: "/kategori/affarside-och-policy",
     type: "support",
   },
   {
