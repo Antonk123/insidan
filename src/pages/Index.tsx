@@ -73,10 +73,6 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="mt-6 text-xs text-muted-foreground">
-          Build: {buildMarker}
-        </div>
-
         {debugEnabled && (
           <div className="mt-4 rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
             <div>Debug: on</div>
