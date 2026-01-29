@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Home } from "lucide-react";
 import { Header } from "@/components/Header";
+import { useQuickLinks } from "@/hooks/useQuickLinks";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -166,26 +167,9 @@ const PROCESS_ITEMS: Array<{
   },
 ];
 
-const QUICK_LINKS = [
-  {
-    label: "Verktygslåda",
-    meta: "Intranät",
-    href: "http://web.pitea.local/?page_id=276",
-  },
-  {
-    label: "Krisplan",
-    meta: "PDF",
-    href: "http://web.pitea.local/?page_id=278",
-  },
-  {
-    label: "Portnummer / Containerplacering",
-    meta: "PDF",
-    href: "http://insidan.pitea.local/VLS/Originaldokument/Hj%C3%A4lpmedel/Portnummer_Containerplacering_PFM.pdf",
-  },
-];
-
 export default function VLSPage() {
   const [activeFilter, setActiveFilter] = useState<"all" | ProcessType>("all");
+  const { data: quickLinks, isLoading: quickLinksLoading } = useQuickLinks();
   const filteredItems = useMemo(() => {
     if (activeFilter === "all") return PROCESS_ITEMS;
     return PROCESS_ITEMS.filter((item) => item.type === activeFilter);
@@ -281,18 +265,30 @@ export default function VLSPage() {
           </div>
 
           <div className="process-actions__buttons">
-            {QUICK_LINKS.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="process-btn"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span className="process-btn__label">{link.label}</span>
-                <span className="process-btn__meta">{link.meta}</span>
-              </a>
-            ))}
+            {quickLinksLoading ? (
+              <>
+                <div className="process-btn process-btn--skeleton" />
+                <div className="process-btn process-btn--skeleton" />
+                <div className="process-btn process-btn--skeleton" />
+              </>
+            ) : quickLinks && quickLinks.length > 0 ? (
+              quickLinks.map((link) => (
+                <a
+                  key={link.id}
+                  href={link.url}
+                  className="process-btn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span className="process-btn__label">{link.title}</span>
+                  <span className="process-btn__meta">{link.icon ?? "Länk"}</span>
+                </a>
+              ))
+            ) : (
+              <p className="process-actions__empty">
+                Inga snabblänkar är konfigurerade ännu.
+              </p>
+            )}
           </div>
         </section>
       </main>
