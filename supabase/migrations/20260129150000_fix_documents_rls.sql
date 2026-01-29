@@ -9,7 +9,6 @@ BEGIN
   ) THEN
     EXECUTE 'DROP POLICY "Authenticated can add documents" ON public.documents';
   END IF;
-
   IF EXISTS (
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'public'
@@ -36,7 +35,6 @@ BEGIN
   ) THEN
     EXECUTE 'DROP POLICY "Authenticated can upload documents" ON storage.objects';
   END IF;
-
   IF EXISTS (
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'storage'
