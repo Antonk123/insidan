@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_BUCKET = "insidan-bucket";
-
 const withTimeout = async <T,>(promise: Promise<T>, ms: number) => {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeoutPromise = new Promise<never>((_, reject) => {
