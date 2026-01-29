@@ -7,7 +7,6 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { useIsFetching } from "@tanstack/react-query";
 
 const Index = () => {
-  const buildMarker = "2026-01-29-b3e56d9";
   const { user, session, isAdmin, loading } = useAuthContext();
   const isFetching = useIsFetching();
   const debugEnabled = new URLSearchParams(window.location.search).has("debug");
@@ -71,10 +70,6 @@ const Index = () => {
           <div className="lg:col-span-1">
             <RecentDocuments />
           </div>
-        </div>
-
-        <div className="mt-10 text-xs text-muted-foreground">
-          Build: {buildMarker}
         </div>
 
         {debugEnabled && (
