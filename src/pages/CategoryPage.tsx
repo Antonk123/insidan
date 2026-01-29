@@ -32,6 +32,7 @@ export default function CategoryPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
   
   // Get subcategories
   const subcategories = allCategories?.filter((cat) => cat.parent_id === category?.id);
@@ -47,6 +48,44 @@ export default function CategoryPage() {
     if (ext === "xls" || ext === "xlsx") return "excel";
     if (ext === "doc" || ext === "docx") return "word";
     return "file";
+  };
+
+  const handleDelete = async (docId: string, storagePath?: string | null) => {
+    if (!isAdmin) return;
+
+    setIsDeletingId(docId);
+    try {
+      if (storagePath) {
+        const { error: storageError } = await supabase
+          .storage
+          .from(bucketName)
+          .remove([storagePath]);
+        if (storageError) throw storageError;
+      }
+
+      const { error: deleteError } = await supabase
+        .from("documents")
+        .delete()
+        .eq("id", docId);
+
+      if (deleteError) throw deleteError;
+
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-documents"] });
+
+      toast({
+        title: "Dokument borttaget",
+        description: "Dokumentet har raderats.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Fel vid borttagning",
+        description: error?.message ?? "Något gick fel. Försök igen.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingId(null);
+    }
   };
 
   const bucketName = "insidan-bucket";
@@ -345,7 +384,21 @@ export default function CategoryPage() {
           ) : documents && documents.length > 0 ? (
             <div className="space-y-4">
               {documents.map((doc) => (
-                <DocumentCard key={doc.id} document={doc} />
+                <div key={doc.id} className="space-y-2">
+                  <DocumentCard document={doc} />
+                  {isAdmin && (
+                    <div className="flex justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(doc.id, doc.storage_path)}
+                        disabled={isDeletingId === doc.id}
+                      >
+                        {isDeletingId === doc.id ? "Tar bort..." : "Ta bort"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           ) : (
