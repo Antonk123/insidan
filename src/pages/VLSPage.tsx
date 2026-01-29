@@ -166,6 +166,24 @@ const PROCESS_ITEMS: Array<{
   },
 ];
 
+const QUICK_LINKS = [
+  {
+    label: "Verktygslåda",
+    meta: "Intranät",
+    href: "http://web.pitea.local/?page_id=276",
+  },
+  {
+    label: "Krisplan",
+    meta: "PDF",
+    href: "http://web.pitea.local/?page_id=278",
+  },
+  {
+    label: "Portnummer / Containerplacering",
+    meta: "PDF",
+    href: "http://insidan.pitea.local/VLS/Originaldokument/Hj%C3%A4lpmedel/Portnummer_Containerplacering_PFM.pdf",
+  },
+];
+
 export default function VLSPage() {
   const [activeFilter, setActiveFilter] = useState<"all" | ProcessType>("all");
   const filteredItems = useMemo(() => {
@@ -251,6 +269,29 @@ export default function VLSPage() {
                   <p>{item.description}</p>
                 </a>
               </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="process-actions">
+          <div className="process-actions__intro">
+            <p className="process-actions__eyebrow">Snabblänkar</p>
+            <h3>Verktyg och dokument</h3>
+            <p>Nå de mest använda stöddokumenten snabbare.</p>
+          </div>
+
+          <div className="process-actions__buttons">
+            {QUICK_LINKS.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                className="process-btn"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span className="process-btn__label">{link.label}</span>
+                <span className="process-btn__meta">{link.meta}</span>
+              </a>
             ))}
           </div>
         </section>
