@@ -53,6 +53,8 @@ export default function CategoryPage() {
     return "file";
   };
 
+  const bucketName = "insidan-bucket";
+
   const handleUpload = async () => {
     if (!user || !file || !category?.id) return;
 
@@ -63,14 +65,14 @@ export default function CategoryPage() {
 
       const { error: uploadError } = await supabase
         .storage
-        .from("documents")
+        .from(bucketName)
         .upload(path, file, { upsert: false });
 
       if (uploadError) throw uploadError;
 
       const { data: publicUrlData } = supabase
         .storage
-        .from("documents")
+        .from(bucketName)
         .getPublicUrl(path);
 
       const documentType = getDocumentType(file.name);
