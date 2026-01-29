@@ -4,10 +4,27 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function SafetyCounter() {
-  const { data: settings, isLoading } = useSiteSettings();
+  const { data: settings, isLoading, isError, error } = useSiteSettings();
   
   const daysWithoutAccidents = settings?.days_without_accidents ?? "0";
   
+  if (isError) {
+    return (
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="p-6">
+          <p className="text-sm font-medium text-destructive">
+            Kunde inte hämta säkerhetsräknaren.
+          </p>
+          {error instanceof Error && (
+            <p className="mt-1 text-xs text-muted-foreground break-words">
+              {error.message}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
       <CardContent className="p-6">

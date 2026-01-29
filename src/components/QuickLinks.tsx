@@ -11,7 +11,7 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 export function QuickLinks() {
-  const { data: links, isLoading } = useQuickLinks();
+  const { data: links, isLoading, isError, error } = useQuickLinks();
   
   if (isLoading) {
     return (
@@ -25,6 +25,26 @@ export function QuickLinks() {
               <Skeleton key={i} className="h-20" />
             ))}
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Snabblänkar</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-destructive">
+            Kunde inte hämta snabblänkar.
+          </p>
+          {error instanceof Error && (
+            <p className="mt-1 text-xs text-muted-foreground break-words">
+              {error.message}
+            </p>
+          )}
         </CardContent>
       </Card>
     );

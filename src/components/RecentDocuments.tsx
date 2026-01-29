@@ -14,7 +14,7 @@ const documentTypeIcons: Record<string, React.ElementType> = {
 };
 
 export function RecentDocuments() {
-  const { data: documents, isLoading } = useRecentDocuments(5);
+  const { data: documents, isLoading, isError, error } = useRecentDocuments(5);
   
   if (isLoading) {
     return (
@@ -31,6 +31,29 @@ export function RecentDocuments() {
               <Skeleton key={i} className="h-16" />
             ))}
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Senaste dokument
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-destructive">
+            Kunde inte hämta dokument.
+          </p>
+          {error instanceof Error && (
+            <p className="mt-1 text-xs text-muted-foreground break-words">
+              {error.message}
+            </p>
+          )}
         </CardContent>
       </Card>
     );
