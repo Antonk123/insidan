@@ -2,7 +2,6 @@ import { Header } from "@/components/Header";
 import { SafetyCounter } from "@/components/SafetyCounter";
 import { QuickLinks } from "@/components/QuickLinks";
 import { RecentDocuments } from "@/components/RecentDocuments";
-import { CategoryList } from "@/components/CategoryList";
 
 const Index = () => {
   return (
@@ -22,7 +21,6 @@ const Index = () => {
           <div className="lg:col-span-2 space-y-6">
             <SafetyCounter />
             <QuickLinks />
-            <CategoryList />
           </div>
           
           {/* Right column - Recent documents */}
