@@ -81,19 +81,6 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
 
     try {
       setIsDownloading(true);
-      const urlObj = new URL(doc.url, window.location.origin);
-      const isSameOrigin = urlObj.origin === window.location.origin;
-
-      if (!isSameOrigin) {
-        // External servers often block cross-origin fetch for downloads
-        window.open(doc.url, "_blank", "noopener,noreferrer");
-        toast({
-          title: "Öppnar i ny flik",
-          description: "Filen kan inte laddas ner direkt från extern källa.",
-        });
-        return;
-      }
-
       const res = await fetch(doc.url);
       if (!res.ok) {
         throw new Error(`Download failed (${res.status})`);
