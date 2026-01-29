@@ -57,7 +57,7 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
   
   const Icon = documentTypeIcons[doc.document_type] ?? File;
   const typeColor = documentTypeColors[doc.document_type] ?? "bg-muted text-muted-foreground";
-  const canPreview = doc.document_type === "pdf" && !doc.is_external;
+  const canPreview = doc.document_type === "pdf";
   
   const timeAgo = formatDistanceToNow(new Date(doc.created_at), {
     addSuffix: true,
@@ -71,11 +71,6 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
 
   const handleDownload = async (e: React.MouseEvent) => {
     e.preventDefault();
-    if (doc.is_external) {
-      window.open(doc.url, "_blank", "noopener,noreferrer");
-      return;
-    }
-
     const filenameFromPath = doc.storage_path?.split("/").pop();
     const filenameFromUrl = doc.url.split("?")[0].split("/").pop();
     const fallbackExt = doc.document_type === "pdf" ? ".pdf" : "";
@@ -178,17 +173,14 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
                     className="h-8 px-3"
                     disabled={isDownloading}
                   >
-                    {doc.is_external ? (
-                      <>
+                    <>
+                      {doc.is_external ? (
                         <ExternalLink className="h-4 w-4 mr-1" />
-                        Öppna
-                      </>
-                    ) : (
-                      <>
+                      ) : (
                         <Download className="h-4 w-4 mr-1" />
-                        {isDownloading ? "Laddar..." : "Ladda ner"}
-                      </>
-                    )}
+                      )}
+                      {isDownloading ? "Laddar..." : "Ladda ner"}
+                    </>
                   </Button>
                 </div>
               </div>
