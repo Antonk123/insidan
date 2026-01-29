@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ChevronRight, Home, Folder, FileText } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -5,6 +6,10 @@ import { useCategoryBySlug, useCategories } from "@/hooks/useCategories";
 import { useDocuments } from "@/hooks/useDocuments";
 import { DocumentCard } from "@/components/DocumentCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Breadcrumb,
@@ -14,12 +19,23 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: category, isLoading: categoryLoading } = useCategoryBySlug(slug ?? "");
   const { data: allCategories } = useCategories();
   const { data: documents, isLoading: documentsLoading } = useDocuments(category?.id);
+  const { user } = useAuthContext();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   
   // Get subcategories
   const subcategories = allCategories?.filter((cat) => cat.parent_id === category?.id);
@@ -28,6 +44,71 @@ export default function CategoryPage() {
   const parentCategory = category?.parent_id 
     ? allCategories?.find((cat) => cat.id === category.parent_id)
     : null;
+
+  const getDocumentType = (filename: string) => {
+    const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+    if (ext === "pdf") return "pdf";
+    if (ext === "xls" || ext === "xlsx") return "excel";
+    if (ext === "doc" || ext === "docx") return "word";
+    return "file";
+  };
+
+  const handleUpload = async () => {
+    if (!user || !file || !category?.id) return;
+
+    setIsUploading(true);
+    try {
+      const cleanName = file.name.replace(/\s+/g, "-");
+      const path = `${category.slug}/${Date.now()}-${cleanName}`;
+
+      const { error: uploadError } = await supabase
+        .storage
+        .from("documents")
+        .upload(path, file, { upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase
+        .storage
+        .from("documents")
+        .getPublicUrl(path);
+
+      const documentType = getDocumentType(file.name);
+      const { error: insertError } = await supabase
+        .from("documents")
+        .insert({
+          title: title.trim() || file.name,
+          description: description.trim() || null,
+          category_id: category.id,
+          document_type: documentType,
+          url: publicUrlData.publicUrl,
+          is_external: false,
+          is_public: true,
+          is_new: true,
+        });
+
+      if (insertError) throw insertError;
+
+      setFile(null);
+      setTitle("");
+      setDescription("");
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-documents"] });
+
+      toast({
+        title: "Uppladdning klar",
+        description: "Dokumentet har lagts till.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Fel vid uppladdning",
+        description: error?.message ?? "Något gick fel. Försök igen.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
   
   if (categoryLoading) {
     return (
@@ -154,6 +235,45 @@ export default function CategoryPage() {
             <FileText className="h-5 w-5 text-primary" />
             Dokument
           </h2>
+
+          {user && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Ladda upp dokument</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="upload-title">Titel</Label>
+                  <Input
+                    id="upload-title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Titel (valfritt)"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="upload-description">Beskrivning</Label>
+                  <Textarea
+                    id="upload-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Beskrivning (valfritt)"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="upload-file">Fil</Label>
+                  <Input
+                    id="upload-file"
+                    type="file"
+                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  />
+                </div>
+                <Button onClick={handleUpload} disabled={!file || isUploading}>
+                  {isUploading ? "Laddar upp..." : "Ladda upp"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
           
           {documentsLoading ? (
             <div className="space-y-4">
