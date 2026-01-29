@@ -18,6 +18,7 @@ interface Document {
   description: string | null;
   document_type: string;
   url: string;
+  storage_path?: string | null;
   is_external: boolean;
   is_new: boolean;
   tags: string[] | null;
@@ -52,6 +53,7 @@ const documentTypeColors: Record<string, string> = {
 
 export function DocumentCard({ document: doc }: DocumentCardProps) {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   
   const Icon = documentTypeIcons[doc.document_type] ?? File;
   const typeColor = documentTypeColors[doc.document_type] ?? "bg-muted text-muted-foreground";
@@ -67,9 +69,40 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
     setPreviewOpen(true);
   };
 
-  const handleDownload = (e: React.MouseEvent) => {
+  const handleDownload = async (e: React.MouseEvent) => {
     e.preventDefault();
-    window.open(doc.url, "_blank");
+    if (doc.is_external) {
+      window.open(doc.url, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    const filenameFromPath = doc.storage_path?.split("/").pop();
+    const filenameFromUrl = doc.url.split("?")[0].split("/").pop();
+    const fallbackExt = doc.document_type === "pdf" ? ".pdf" : "";
+    const fallbackName = `${doc.title}${fallbackExt}`;
+    const filename = filenameFromPath || filenameFromUrl || fallbackName;
+
+    try {
+      setIsDownloading(true);
+      const res = await fetch(doc.url);
+      if (!res.ok) {
+        throw new Error(`Download failed (${res.status})`);
+      }
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      // Fallback to opening the file if the download fails
+      window.open(doc.url, "_blank", "noopener,noreferrer");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -143,6 +176,7 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
                     variant={canPreview ? "outline" : "default"}
                     onClick={handleDownload}
                     className="h-8 px-3"
+                    disabled={isDownloading}
                   >
                     {doc.is_external ? (
                       <>
@@ -152,7 +186,7 @@ export function DocumentCard({ document: doc }: DocumentCardProps) {
                     ) : (
                       <>
                         <Download className="h-4 w-4 mr-1" />
-                        Ladda ner
+                        {isDownloading ? "Laddar..." : "Ladda ner"}
                       </>
                     )}
                   </Button>
