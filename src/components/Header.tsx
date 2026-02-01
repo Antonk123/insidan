@@ -1,5 +1,5 @@
+import { useState, useEffect } from "react";
 import { Search, LogOut, User, Shield } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
@@ -11,11 +11,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SearchDialog } from "@/components/SearchDialog";
 
 export function Header() {
+  const [searchOpen, setSearchOpen] = useState(false);
   const { user, isAdmin, signOut, loading } = useAuthContext();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Keyboard shortcut for search
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setSearchOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -44,14 +58,26 @@ export function Header() {
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="relative w-64 hidden md:block">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Sök dokument..."
-              className="pl-9"
-            />
-          </div>
+          <Button
+            variant="outline"
+            className="relative w-64 justify-start text-muted-foreground hidden md:flex"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search className="mr-2 h-4 w-4" />
+            <span>Sök dokument...</span>
+            <kbd className="pointer-events-none absolute right-2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+          <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
           
           {loading ? (
             <div className="h-9 w-20 bg-muted animate-pulse rounded-md" />
