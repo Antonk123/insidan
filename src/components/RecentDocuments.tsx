@@ -1,10 +1,15 @@
-import { FileText, FileSpreadsheet, File, ExternalLink, Clock } from "lucide-react";
+import { FileText, FileSpreadsheet, File, ExternalLink, Clock, LogIn } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useRecentDocuments } from "@/hooks/useDocuments";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { DocumentUploadDialog } from "@/components/DocumentUploadDialog";
+import { AdminDocumentCard } from "@/components/AdminDocumentCard";
+import { Link } from "react-router-dom";
 
 const documentTypeIcons: Record<string, React.ElementType> = {
   pdf: FileText,
@@ -15,6 +20,7 @@ const documentTypeIcons: Record<string, React.ElementType> = {
 
 export function RecentDocuments() {
   const { data: documents, isLoading, isError, error } = useRecentDocuments(5);
+  const { user, isAdmin, loading: authLoading } = useAuthContext();
   
   if (isLoading) {
     return (
@@ -30,6 +36,33 @@ export function RecentDocuments() {
             {[1, 2, 3, 4, 5].map((i) => (
               <Skeleton key={i} className="h-16" />
             ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Not logged in - show login prompt
+  if (!authLoading && !user) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Senaste dokument
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 space-y-4">
+            <LogIn className="h-12 w-12 mx-auto text-muted-foreground" />
+            <div>
+              <p className="text-muted-foreground mb-4">
+                Logga in för att se dokument
+              </p>
+              <Button asChild>
+                <Link to="/login">Logga in</Link>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -62,11 +95,12 @@ export function RecentDocuments() {
   if (!documents || documents.length === 0) {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
             Senaste dokument
           </CardTitle>
+          {isAdmin && <DocumentUploadDialog />}
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-center py-8">
@@ -76,7 +110,30 @@ export function RecentDocuments() {
       </Card>
     );
   }
-  
+
+  // Admin view with delete buttons
+  if (isAdmin) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Senaste dokument
+          </CardTitle>
+          <DocumentUploadDialog />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {documents.map((doc) => (
+              <AdminDocumentCard key={doc.id} document={doc} />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Regular user view
   return (
     <Card>
       <CardHeader>
@@ -89,10 +146,12 @@ export function RecentDocuments() {
         <div className="space-y-4">
           {documents.map((doc) => {
             const Icon = documentTypeIcons[doc.document_type] ?? File;
-            const timeAgo = formatDistanceToNow(new Date(doc.created_at), {
-              addSuffix: true,
-              locale: sv,
-            });
+            const timeAgo = doc.created_at
+              ? formatDistanceToNow(new Date(doc.created_at), {
+                  addSuffix: true,
+                  locale: sv,
+                })
+              : "";
             
             return (
               <a
