@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { MoveDocumentDropdown } from "@/components/MoveDocumentDropdown";
 
 type Document = Tables<"documents">;
 
@@ -147,6 +148,14 @@ export function DocumentCompactView({
                   >
                     <Download className="h-4 w-4" />
                   </Button>
+                  {isAdmin && (
+                    <MoveDocumentDropdown
+                      documentId={doc.id}
+                      documentTitle={doc.title}
+                      currentCategoryId={doc.category_id}
+                      variant="icon"
+                    />
+                  )}
                   {isAdmin && onEdit && (
                     <Button
                       variant="ghost"
