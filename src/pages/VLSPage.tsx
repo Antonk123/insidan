@@ -17,10 +17,17 @@ import "./VLSPage.css";
 export default function VLSPage() {
   const [activeFilter, setActiveFilter] = useState<"all" | ProcessType>("all");
   const { data: quickLinks, isLoading: quickLinksLoading } = useQuickLinks();
-  const filteredItems = useMemo(() => {
-    if (activeFilter === "all") return PROCESS_ITEMS;
-    return PROCESS_ITEMS.filter((item) => item.type === activeFilter);
-  }, [activeFilter]);
+  
+  const coreItems = useMemo(() => 
+    PROCESS_ITEMS.filter((item) => item.type === "core"), 
+  []);
+  
+  const supportItems = useMemo(() => 
+    PROCESS_ITEMS.filter((item) => item.type === "support"), 
+  []);
+
+  const showCore = activeFilter === "all" || activeFilter === "core";
+  const showSupport = activeFilter === "all" || activeFilter === "support";
   
   return (
     <div className="min-h-screen bg-background">
@@ -83,20 +90,56 @@ export default function VLSPage() {
             </div>
           </div>
 
-          <div className="process-map__grid" aria-live="polite">
-            {filteredItems.map((item) => (
-              <article
-                key={`${item.type}-${item.title}`}
-                className={`process-card process-card--${item.type}`}
-                data-type={item.type}
-              >
-                <a className="process-card__link" href={item.href}>
-                  <h3>{item.title}</h3>
-                  <p>{item.description}</p>
-                </a>
-              </article>
-            ))}
-          </div>
+          {/* HUVUDPROCESSER */}
+          {showCore && (
+            <div className="process-section">
+              <div className="process-section__header">
+                <h3 className="process-section__title process-section__title--core">HUVUDPROCESSER</h3>
+                <span className="process-section__count process-section__count--core">{coreItems.length}</span>
+              </div>
+              <div className="process-map__grid process-map__grid--core" aria-live="polite">
+                {coreItems.map((item, index) => (
+                  <article
+                    key={`${item.type}-${item.title}`}
+                    className="process-card process-card--core"
+                    data-type={item.type}
+                  >
+                    <a className="process-card__link" href={item.href}>
+                      <span className="process-card__number">{index + 1}</span>
+                      <div className="process-card__content">
+                        <h4>{item.title}</h4>
+                        <p>{item.description}</p>
+                      </div>
+                    </a>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* STÖDPROCESSER */}
+          {showSupport && (
+            <div className="process-section">
+              <div className="process-section__header">
+                <h3 className="process-section__title process-section__title--support">STÖDPROCESSER</h3>
+                <span className="process-section__count process-section__count--support">{supportItems.length}</span>
+              </div>
+              <div className="process-map__grid process-map__grid--support" aria-live="polite">
+                {supportItems.map((item) => (
+                  <article
+                    key={`${item.type}-${item.title}`}
+                    className="process-card process-card--support"
+                    data-type={item.type}
+                  >
+                    <a className="process-card__link" href={item.href}>
+                      <h4>{item.title}</h4>
+                      <p>{item.description}</p>
+                    </a>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="process-actions">
