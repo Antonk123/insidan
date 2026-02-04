@@ -8,6 +8,7 @@ import { DocumentCard } from "@/components/DocumentCard";
 import { DocumentCompactView } from "@/components/DocumentCompactView";
 import { SubcategoryManager } from "@/components/SubcategoryManager";
 import { ViewModeToggle, ViewMode } from "@/components/ViewModeToggle";
+import { MoveDocumentDropdown } from "@/components/MoveDocumentDropdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -457,6 +458,12 @@ export default function CategoryPage() {
                           </>
                         ) : (
                           <>
+                            <MoveDocumentDropdown
+                              documentId={doc.id}
+                              documentTitle={doc.title}
+                              currentCategoryId={doc.category_id}
+                              variant="button"
+                            />
                             <Button
                               variant="outline"
                               size="sm"

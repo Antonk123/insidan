@@ -169,3 +169,33 @@ export function useDeleteDocument() {
     },
   });
 }
+
+interface MoveDocumentParams {
+  documentId: string;
+  categoryId: string;
+}
+
+export function useMoveDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ documentId, categoryId }: MoveDocumentParams) => {
+      const { data, error } = await supabase
+        .from("documents")
+        .update({
+          category_id: categoryId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", documentId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-documents"] });
+    },
+  });
+}
